@@ -1,0 +1,231 @@
+---
+title: "Spider plots for monster results"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Packages
+```{r}
+library(tidyverse)
+## The following steps were necessary to install the package ggradar
+## install.packages("remotes")
+## remotes::install_github("ricardo-bion/ggradar")
+
+library(fmsb)
+library(dplyr)
+library(ggVennDiagram)
+
+```
+
+# Data
+```{r}
+## subpopulations
+all_monster_pos_ids <- read_csv("subpopulation_all_monster_pos_ids.csv", show_col_types = FALSE)
+subpopulation_pos_1_ids <- read_csv("subpopulation_pos_1_ids.csv", show_col_types = FALSE)
+subpopulation_pos_2_ids <- read_csv("subpopulation_pos_2_ids.csv", show_col_types = FALSE)
+subpopulation_pos_3A_ids <- read_csv("subpopulation_pos_3A_ids.csv", show_col_types = FALSE)
+subpopulation_pos_3B_ids <- read_csv("subpopulation_pos_3B_ids.csv", show_col_types = FALSE)
+subpopulation_pos_4_ids <- read_csv("subpopulation_pos_4_ids.csv", show_col_types = FALSE)
+
+## merci 
+merci_ids100_first <- read_csv("merci_ids100_first.csv", show_col_types = FALSE)
+
+## pos_dset
+pos_dset_ids <- read_csv("pos_dataset_ids.csv", show_col_types = FALSE)
+
+## sp_notm
+sp_notm_ids <- read_csv("sp_notm.csv", show_col_types = FALSE)
+```
+
+
+# Spiderplots
+This section will be a test to then build the function for the spider plots.
+
+To build the spider plot, we need to follow the following procedure (NB. monster == a subpopulation ids):
+1. decide our variables (they will be the columns of the df we create):
+  a. intersection ids sp-notm+monster+merci,
+  b. intersection ids sp-notm+monster,
+  c. intersection ids sp-notm+merci,
+  d. intersection ids monster+merci,
+  e. only monster,
+  f. only sp-notm,
+  g. only merci.
+2. Calculate the numbers of the variables (exemple: how many ids in the intersection sp-notm+monster+merci?). This numbers will be the "max" values. Please note that max is the first row name
+3. Then, for each of the variables, we calculate the intersection with the positive dataset (161 sequences). These values will be the "pos_dset" values. Please note that pos_dset is the third row name. (NB: the second row name is min, which we will set to 0)
+4. Then, the data is ready to be plotted.
+  
+## Function to create nice radarcharts
+```{r}
+## https://www.datanovia.com/en/fr/blog/magnifique-graphique-radar-dans-r-avec-les-packages-fmsb-et-ggplot/
+create_beautiful_radarchart <- function(data, color = "#00AFBB", 
+                                        vlabels = colnames(data), vlcex = 0.7,
+                                        caxislabels = NULL, title = NULL, ...){
+  radarchart(
+    data, axistype = 1,
+    # Personnaliser le polygone
+    pcol = color, pfcol = scales::alpha(color, 0.5), plwd = 2, plty = 1,
+    # Personnaliser la grille
+    cglcol = "grey", cglty = 1, cglwd = 0.8,
+    # Personnaliser l'axe
+    axislabcol = "grey", 
+    # Étiquettes des variables
+    vlcex = vlcex, vlabels = vlabels,
+    caxislabels = caxislabels, title = title, ...
+  )
+}
+```
+
+## The final function with all data manipulations
+```{r}
+## format_dfs function
+format_dfs<- function(df_ids){
+  ## format_dfs : function to format the id dfs imported as csv files
+  ## output: a df with only a column, which names is "id
+  df_ids <- df_ids[,-1]
+  df_ids <- df_ids %>% rename("id" = colnames(df_ids))
+  return(df_ids)
+}
+
+
+spider_chart <- function(subp_csv, posdset_csv, merci_csv, spnotm_csv){
+  
+  ## FORMATTING DATA
+  subp_df <- format_dfs(subp_csv)
+  posdset_df <- format_dfs(posdset_csv)
+  merci_df <- format_dfs(merci_csv)
+  spnotm_df <- format_dfs(spnotm_csv)
+  
+  
+  
+  
+  ## MAX ROW CALCULATION
+  var1 <- inner_join(spnotm_df, subp_df, by = "id") %>% inner_join(merci_df, by ="id")
+  lst_1 <- as.list(var1[1])$id
+  ## value of the max for var1
+  var1_max <- dim(var1)[1]
+  
+  ## intersection ids sp-notm+monster
+  var2 <- inner_join(spnotm_df, subp_df, by = "id")
+  lst_2 <- as.list(var2[1])$id
+  ## value of the max for var2
+  var2_max <-  dim(var2)[1]
+  
+  ## intersection ids sp-notm+merci
+  var3 <- inner_join(spnotm_df, merci_df, by = "id")
+  lst_3 <- as.list(var3[1])$id
+  ## value of the max for var3
+  var3_max <- dim(var3)[1]
+  
+  ## intersection ids monster+merci
+  var4 <- inner_join(subp_df, merci_df, by = "id")
+  lst_4 <- as.list(var4[1])$id
+  ## value of the max for var4
+  var4_max <-  dim(var4)[1]
+  
+  ## only monster
+  var5 <- subp_df
+  lst_5 <- as.list(var5[1])$id
+  ## value of the max for var5
+  var5_max <- dim(var5)[1]
+  
+  ## only sp-notm
+  var6 <- spnotm_df
+  lst_6 <- as.list(var6[1])$id
+  ## value of the max for var6
+  var6_max <-  dim(var6)[1]
+  
+  ## only merci
+  var7 <- merci_df
+  lst_7 <- as.list(var7[1])$id
+  ## value of the max for var7
+  var7_max <-  dim(var7)[1]
+  
+  
+  
+  ids_list <- list(monster = lst_5, 
+                   spnotm = lst_6, 
+                   merci = lst_7)
+  
+  ## vector max_row
+  var <- c(var1, var2, var3, var4, var5,var6, var7)
+  max <- c(var1_max, var2_max, var3_max, var4_max, var5_max, var6_max, var7_max)
+  
+  
+  ## POSDSET INTERSECTION ROW CALCULATION
+  lst_nb_ids_inters_with_subp <- list()
+  
+  for(i in 1:7){
+    ## 1. intersection ids sp-notm+monster+merci
+    ## 2. intersection ids sp-notm+monster
+    ## 3. intersection ids sp-notm+merci
+    ## 4. intersection ids monster+merci
+    ## 5. only monster
+    ## 6. only sp-notm
+    ## 7. only merci 
+    
+    df_var <- tibble("id" = var[[i]])   
+    
+    ## calculating intersections between the posdset_df and the different vars 
+    var_posdset <- inner_join(posdset_df, df_var, by="id")
+    
+    ## deleting ids of interesection from posdest_df, otherwise
+    ## sets will not be exclusive
+    posdset_df <- anti_join(posdset_df, df_var)
+    
+    ## value of the for var_posdset
+    var_posdset_value <- dim(var_posdset)[1]
+    lst_nb_ids_inters_with_subp[i] = var_posdset_value
+    
+  }
+  
+  
+  
+  ## MIN ROW
+  min <- rep(0, 7)
+  max <- rep(161, 7)
+
+  
+  
+  
+  ## DF SPIDER FOR SPIDER PLOT
+  df_spider <- data_frame("sp-notm+monster+merci" = as.integer(),
+                          "sp-notm+monster" = as.integer(),
+                          "sp-notm+merci" = as.integer(),
+                          "monster+merci" = as.integer(),
+                          "only monster" = as.integer(),
+                          "only sp-notm" = as.integer(),
+                          "only merci" = as.integer())
+  
+  df_spider[1,] <- as.list(max)
+  df_spider[2,] <- as.list(min)
+  df_spider[3,] <- lst_nb_ids_inters_with_subp
+  
+  radarchart(df_spider)
+  return_list <- list("dataframe_radar" = df_spider,
+                      "list_ids" = ids_list)
+  return(return_list)
+}
+```
+
+
+## All the sequences found by monster
+```{r}
+result <- spider_chart(all_monster_pos_ids, pos_dset_ids, merci_ids100_first, sp_notm_ids)
+```
+
+## venn uguale, totale 161 (solo lui)
+```{r}
+names(result$list_ids)
+## monster merci sp-notm
+
+length(result$list_ids$monster)
+## 129
+
+length(result$list_ids$merci)
+
+
+ggVennDiagram(result$list_ids)
+
+```
+

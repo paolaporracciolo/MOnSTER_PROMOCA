@@ -1,0 +1,2 @@
+All-Minc3s-PPN-spec-SP-noTM.acc.txt (text/plain) 23958 bytes.
+Minc3-SP-no-TM.acc (application/vnd.americandynamics.acc) 50598 bytes.
