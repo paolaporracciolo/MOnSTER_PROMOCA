@@ -34,6 +34,9 @@ physicochemical properties that are in line with the positive
 dataset and if they are more present in the positive dataset
 compared to the negative one.
 
+### Demo
+In the folder MOnSTER/demo a demo is available step by step.
+
 ## About PRO-MOCA
 PRO-MOCA (PROtein-MOtif Characteristics Aligner) is an
 aligner of motif sequences.
@@ -56,3 +59,6 @@ No gaps are admitted into the sequences, only at the
 extremities. This is because motifs are very short sequences
 hence introducing gaps could mean losing the information
 of the motif itself.
+
+### Demo
+In the folder PRO_MOCA/notebooks a demo is available step by step.
