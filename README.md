@@ -1,3 +1,6 @@
+# !!! Please visit https://github.com/Plant-Net/MOnSTER_PROMOCA.git for the final version of the tool !!!
+
+
 # MOnSTER_PROMOCA
 This repository contains the folders of the tools MOnSTER and PRO-MOCA
 
